@@ -20,7 +20,7 @@ instance Show Prop where
   show (Cons True)  = "Verdadero"
   show (Cons False) = "Falso"
   show (Var p) = p
-  show (Not p) = "" ++ show p
+  show (Not p) = "¬" ++ show p
   show (Or p q) = "(" ++ show p ++ " ∨ " ++ show q ++ ")"
   show (And p q) = "(" ++ show p ++ " ∧ " ++ show q ++ ")"
   show (Impl p q) = "(" ++ show p ++ " → " ++ show q ++ ")"
@@ -40,21 +40,45 @@ type Estado  = [String]
 
 -- 3.2 Ejercicios
 
+--Funcion auxiliar dada una lista regresa los no repetidos
+noRepetidos :: [String] -> [String]
+noRepetidos [] = []
+noRepetidos (x:xs) = x:noRepetidos [k | k <- xs, k /= x]
+
 -- Ejercicio 1
 variables :: Prop -> [String]
-variables = undefined
+variables (Var p) = [p]
+variables (Not p) =  noRepetidos (variables p)
+variables (And p q) = noRepetidos (variables p ++  variables q)
+variables (Or p q) =  noRepetidos (variables p ++ variables q)
+variables (Impl p q) = noRepetidos (variables p ++ variables q)
+variables (Syss p q) = noRepetidos (variables p ++ variables q)
 
 -- Ejercicio 2
 conjPotencia :: [a] -> [[a]]
-conjPotencia = undefined
+conjPotencia [] = [[]]
+conjPotencia (x:xs) = [(x:xs) | ys <- conjPotencia xs] ++ conjPotencia xs 
 
 -- Ejercicio 3
 interpretacion :: Prop -> Estado -> Bool
-interpretacion = undefined
+interpretacion (Var p) [] = False 
+interpretacion (Var p) (x:xs) = if p == x then True else interpretacion (Var p) xs 
+interpretacion (Not p) xs =  if interpretacion p xs == False then True else False
+interpretacion (And p q) xs = if interpretacion p xs == True && interpretacion q xs == True then True else False 
+interpretacion (Or p q) xs = if interpretacion p xs == False && interpretacion q xs == False then False else True
+interpretacion (Impl p q) xs = if interpretacion p xs == True && interpretacion q xs== False then False else True
+interpretacion (Syss p q) xs = if interpretacion p xs == interpretacion q xs then True else False
+
+
 
 -- Ejercicio 4
 estadosPosibles :: Prop -> [Estado]
-estadosPosibles = undefined
+estadosPosibles (Var p) = conjPotencia (variables (Var p))
+estadosPosibles (Not p) = conjPotencia (variables (Not p))
+estadosPosibles (And p q) = conjPotencia (variables (And p q))
+estadosPosibles (Or p q) = conjPotencia (variables (Or p q))
+estadosPosibles (Impl p q) = conjPotencia (variables (Impl p q))
+estadosPosibles (Syss p q) = conjPotencia (variables (Syss p q))
 
 -- Ejercicio 5
 modelos :: Prop -> [Estado]
