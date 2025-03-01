@@ -57,14 +57,15 @@ variables (Syss p q) = noRepetidos (variables p ++ variables q)
 -- Ejercicio 2
 conjPotencia :: [a] -> [[a]]
 conjPotencia [] = [[]]
-conjPotencia (x:xs) = [(x:xs) | ys <- conjPotencia xs] ++ conjPotencia xs 
+conjPotencia (x:xs) = [(x:ys) | ys <- conjPotencia xs] ++ conjPotencia xs
 
 -- Ejercicio 3
 interpretacion :: Prop -> Estado -> Bool
-interpretacion (Var p) [] = False 
-interpretacion (Var p) (x:xs) = if p == x then True else interpretacion (Var p) xs 
+interpretacion (Cons b) _ = b
+interpretacion (Var p) [] = False
+interpretacion (Var p) (x:xs) = if p == x then True else interpretacion (Var p) xs
 interpretacion (Not p) xs =  if interpretacion p xs == False then True else False
-interpretacion (And p q) xs = if interpretacion p xs == True && interpretacion q xs == True then True else False 
+interpretacion (And p q) xs = if interpretacion p xs == True && interpretacion q xs == True then True else False
 interpretacion (Or p q) xs = if interpretacion p xs == False && interpretacion q xs == False then False else True
 interpretacion (Impl p q) xs = if interpretacion p xs == True && interpretacion q xs== False then False else True
 interpretacion (Syss p q) xs = if interpretacion p xs == interpretacion q xs then True else False
@@ -82,29 +83,38 @@ estadosPosibles (Syss p q) = conjPotencia (variables (Syss p q))
 
 -- Ejercicio 5
 modelos :: Prop -> [Estado]
-modelos = undefined
+modelos formula = [estado | estado <- estadosPosibles formula, interpretacion formula estado]
 
 -- Ejercicio 6
 sonEquivalentes :: Prop -> Prop -> Bool
-sonEquivalentes = undefined
+sonEquivalentes formula1 formula2 =
+  let
+    union :: [String] -> [String] -> [String]
+    union xs ys = noRepetidos (xs ++ ys)
+    variablesF1 = variables formula1
+    variablesF2 = variables formula2
+    variablesTodas = union variablesF1 variablesF2
+  in
+    all (\estado -> interpretacion formula1 estado == interpretacion formula2 estado)
+        (conjPotencia variablesTodas)
 
 -- Ejercicio 7
 tautologia :: Prop -> Bool
-tautologia = undefined
+tautologia formula = all (interpretacion formula) (estadosPosibles formula)
 
 -- Ejercicio 8
 contradiccion :: Prop -> Bool
-contradiccion = undefined
+contradiccion formula = null (modelos formula)
 
 -- Ejercicio 9
-contingencia :: Prop -> Bool 
-contingencia = undefined
+contingencia :: Prop -> Bool
+contingencia formula = not (tautologia formula) && not (contradiccion formula)
 
 -- Ejercicio 10
 esModelo :: Estado -> Prop -> Bool
-esModelo = undefined
+esModelo estado formula = interpretacion formula estado
 
 -- Ejercicio 11
 esSatisfacible :: Prop -> Bool
-esSatisfacible = undefined
+esSatisfacible formula = any (interpretacion formula) (estadosPosibles formula)
 
