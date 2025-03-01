@@ -104,7 +104,7 @@ tautologia formula = all (interpretacion formula) (estadosPosibles formula)
 
 -- Ejercicio 8
 contradiccion :: Prop -> Bool
-contradiccion formula = null (modelos formula)
+contradiccion formula = all (not . interpretacion formula) (estadosPosibles formula)
 
 -- Ejercicio 9
 contingencia :: Prop -> Bool
