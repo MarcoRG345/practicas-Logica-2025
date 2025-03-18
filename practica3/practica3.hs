@@ -31,12 +31,31 @@ instance Show Prop where
 
 -- Ejercicio 1
 fnn :: Prop -> Prop
-fnn = undefined
+fnn (Var p) = Var p
+fnn (Cons a) = Cons a
+fnn (Not (Not p)) = fnn p
+fnn (Not (And p q)) = Or (fnn (Not p)) (fnn (Not q))
+fnn (Not (Or p q)) = And (fnn (Not p)) (fnn (Not q))
+fnn (Not p) = Not (fnn p)
+fnn (And p q) = And (fnn p) (fnn q)
+fnn (Or p q) = Or (fnn p) (fnn q)
+fnn (Impl p q) = fnn (Or (Not p) q)
+fnn (Syss p q) = fnn (And (Impl p q) (Impl q p))
 
 -- Ejercicio 2
-fnc :: Prop -> Prop
-fnc = undefined
+-- Función para distribuir y pasarla a su forma normal conjuntiva
+distribuir :: Prop -> Prop -> Prop
+distribuir (And p q) r = And (distribuir p r) (distribuir q r)
+distribuir p (And q r) = And (distribuir p q) (distribuir p r)
+distribuir p q = Or p q
 
+fnc :: Prop -> Prop
+fnc prop = fncdos (fnn prop) --Primero convertimos a fnn y ya luego a fnc
+  where
+    fncdos :: Prop -> Prop
+    fncdos (And p q) = And (fncdos p) (fncdos q) --COnjunción recursiva
+    fncdos (Or p q)  = distribuir (fncdos p) (fncdos q) --Dsitribuimos or sobre and
+    fncdos p = p 
 
 -- 3.3 Resolución Binaria
 
@@ -50,13 +69,63 @@ type Clausula = [Literal]
 -- Ejercicios
 
 -- Ejercicio 1
+noRepetidos :: Clausula -> Clausula
+noRepetidos [] = []
+noRepetidos (x:xs) = x : noRepetidos [k | k <- xs, k /= x]
+
+--Función para concatenar listas de claúsulas
+concatenar :: [[c]] ->[c]
+concatenar [] = []
+concatenar (xs:xss) = xs ++ concatenar xss --concatenación recursiva
+
+--Función para unir dos cláusulas sin repeticiones
+clausulaUnion :: [Clausula] -> [Clausula] -> Clausula
+clausulaUnion c1 c2 = noRepetidos (concatenar c1 ++ concatenar c2)
+
 clausulas :: Prop -> [Clausula]
-clausulas = undefined
+clausulas (And p q) = clausulas p ++ clausulas q  --si es conjunción divide las claúsulas
+clausulas (Or p q) = [clausulaUnion (clausulas p) (clausulas q)] --si es disyunción une las claúsulas
+clausulas p =[[p]]
 
 -- Ejercicio 2
-resolucion :: Clausula -> Clausula -> Clausula
-resolucion = undefined
+--Función para ver si dos claúsulas son complemento
+sonComplemento :: Literal -> Literal -> Bool
+sonComplemento (Not p) q = p == q
+sonComplemento p (Not q) = p == q
+sonComplemento _ _ = False
 
+--FUnción que elimina una literal de una claúsula
+eliminar :: Literal -> Clausula ->Clausula
+eliminar _ [] = []
+eliminar l (x:xs) =
+    if l == x
+        then eliminar l xs
+        else x : eliminar l xs
+
+--Función que ve si hay un complemento en una claúsula
+hayComplemento :: Clausula -> Clausula -> (Literal, Literal)
+hayComplemento [] _ = (Cons True, Cons True)  --Caso base, no hay
+hayComplemento (l1:ls1) c2 =
+    let complemento = hayComplementoEnC2 l1 c2
+    in if complemento /= (Cons True, Cons True) then complemento else hayComplemento ls1 c2
+  where
+    --Lo busca en la segunda claúsula
+    hayComplementoEnC2 _ [] = (Cons True, Cons True) --Caso base, no hay
+    hayComplementoEnC2 l1 (l2:ls2) =
+        if sonComplemento l1 l2 then (l1, l2) else hayComplementoEnC2 l1 ls2
+
+resolucion :: Clausula -> Clausula -> Clausula
+resolucion [] _ = []  -- Si ya hay una vacía, devolver vacía inmediatamente
+resolucion _ [] = []  -- Si ya hay una vacía, devolver vacía inmediatamente
+resolucion c1 c2 =
+    let (l1, l2) = hayComplemento c1 c2 --Encuentra el complemento
+    in if l1 == Cons True && l2 == Cons True
+       then c1 ++ c2  -- Si no hay complemento ent unimos
+       else 
+           let nuevaClausula = noRepetidos (eliminar l1 c1 ++ eliminar l2 c2)
+           in if null nuevaClausula
+              then []  -- Si se encuentra la vacía, detener todo y devolver solo eso
+              else resolucion nuevaClausula []  -- Seguir si no es vacía
 
 -- 3.4 Algoritmo de saturación
 
