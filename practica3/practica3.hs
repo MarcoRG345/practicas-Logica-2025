@@ -115,18 +115,11 @@ hayComplemento (l1:ls1) c2 =
         if sonComplemento l1 l2 then (l1, l2) else hayComplementoEnC2 l1 ls2
 
 resolucion :: Clausula -> Clausula -> Clausula
-resolucion [] _ = []  -- Si ya hay una vacía, devolver vacía inmediatamente
-resolucion _ [] = []  -- Si ya hay una vacía, devolver vacía inmediatamente
 resolucion c1 c2 =
-    let (l1, l2) = hayComplemento c1 c2 --Encuentra el complemento
+    let (l1, l2) = hayComplemento c1 c2 --BUscamos el complemento
     in if l1 == Cons True && l2 == Cons True
-       then c1 ++ c2  -- Si no hay complemento ent unimos
-       else 
-           let nuevaClausula = noRepetidos (eliminar l1 c1 ++ eliminar l2 c2)
-           in if null nuevaClausula
-              then []  -- Si se encuentra la vacía, detener todo y devolver solo eso
-              else resolucion nuevaClausula []  -- Seguir si no es vacía
-
+       then noRepetidos (c1 ++ c2)  -- Si no hay complemento, unimos
+       else noRepetidos (eliminar l1 c1 ++ eliminar l2 c2)  -- Eliminamos complementos y devolver el resultado
 -- 3.4 Algoritmo de saturación
 
 -- Ejercicios
