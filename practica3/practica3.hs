@@ -90,8 +90,8 @@ clausulas p =[[p]]
 -- Ejercicio 2
 --Función para ver si dos claúsulas son complemento
 sonComplemento :: Literal -> Literal -> Bool
-sonComplemento (Not p) q = p == q
-sonComplemento p (Not q) = p == q
+sonComplemento (Var p) (Not (Var q)) = p == q
+sonComplemento (Not (Var p)) (Var q) = p == q
 sonComplemento _ _ = False
 
 --FUnción que elimina una literal de una claúsula
@@ -101,33 +101,61 @@ eliminar l (x:xs) =
     if l == x
         then eliminar l xs
         else x : eliminar l xs
-
+             
+--Funcion que devuelve el complemento de dos literales en formato de tupla
+complementoDos :: Literal -> Clausula -> (Literal, Literal)
+complementoDos lt [] = (Cons False, Cons False)
+complementoDos lt (x:xs) = if sonComplemento lt x == True
+  then (lt, x)
+  else complementoDos lt xs
+  
 --Función que ve si hay un complemento en una claúsula
-hayComplemento :: Clausula -> Clausula -> (Literal, Literal)
-hayComplemento [] _ = (Cons True, Cons True)  --Caso base, no hay
-hayComplemento (l1:ls1) c2 =
-    let complemento = hayComplementoEnC2 l1 c2
-    in if complemento /= (Cons True, Cons True) then complemento else hayComplemento ls1 c2
-  where
-    --Lo busca en la segunda claúsula
-    hayComplementoEnC2 _ [] = (Cons True, Cons True) --Caso base, no hay
-    hayComplementoEnC2 l1 (l2:ls2) =
-        if sonComplemento l1 l2 then (l1, l2) else hayComplementoEnC2 l1 ls2
-
+complemento :: Clausula -> Clausula -> (Literal, Literal)
+complemento [] cl2 = (Cons False, Cons False)
+complemento (l1:xl1) cl2 =
+  let (c1, c2) = complementoDos l1 cl2
+  in if c1 == Cons False && c2 == Cons False
+  then complemento xl1 cl2
+  else (c1, c2)
+  
 resolucion :: Clausula -> Clausula -> Clausula
 resolucion c1 c2 =
-    let (l1, l2) = hayComplemento c1 c2 --BUscamos el complemento
+    let (l1, l2) = complemento c1 c2 --BUscamos el complemento
     in if l1 == Cons True && l2 == Cons True
        then noRepetidos (c1 ++ c2)  -- Si no hay complemento, unimos
        else noRepetidos (eliminar l1 c1 ++ eliminar l2 c2)  -- Eliminamos complementos y devolver el resultado
+            
 -- 3.4 Algoritmo de saturación
 
 -- Ejercicios
 
 -- Ejercicio 1
 hayResolvente :: Clausula -> Clausula -> Bool
-hayResolvente = undefined
+hayResolvente cl1 cl2 = if resolucion cl1 cl2 == noRepetidos (cl1 ++ cl2) then False else True 
 
 -- Ejercicio 2
+
+-- Funcion que dado un conjunto S, aplica resolucion sobre el primer elemento fijo de S con el resto de formulas
+aplicar :: [Clausula] -> [Clausula]
+aplicar [] = []
+aplicar (x:xs) = [resolucion x k | k <- xs, hayResolvente x k == True] ++ aplicar xs
+
+-- Funcion que verifica si hay una clausula vacia dentro de un conjunto S
+hayVacia :: [Clausula] -> Bool
+hayVacia [] = False
+hayVacia (x:xs) = if x == [] then True else hayVacia xs
+
+-- Funcion que recibe dos conjuntos Rn Rn+1 y devuelve
+res :: [Clausula]->[Clausula]-> Bool
+res cjt_anterior  cjt_actual =
+  let res_actual = cjt_actual ++ aplicar cjt_actual in 
+  if hayVacia res_actual == False then -- si no se encuentra la vacia.
+	if cjt_anterior == cjt_actual then False -- No se pudo resolver o se cicla lo que pase primero por def.
+	else res cjt_actual (cjt_actual ++ aplicar cjt_actual)
+  else True -- regresa verdadero si se pudo resolver, es decir, la vacia fue encontrada.
+
 saturacion :: Prop -> Bool
-saturacion = undefined
+saturacion phi =
+  let cjt0 = clausulas phi
+      cjt1 = cjt0 ++ aplicar cjt0
+  in if res cjt0 cjt1 == True then False else True
