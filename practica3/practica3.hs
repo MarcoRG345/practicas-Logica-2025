@@ -138,14 +138,14 @@ hayResolvente cl1 cl2 = if resolucion cl1 cl2 == noRepetidos (cl1 ++ cl2) then F
 -- Funcion que dado un conjunto S, aplica resolucion sobre el primer elemento fijo de S con el resto de formulas
 aplicar :: [Clausula] -> [Clausula]
 aplicar [] = []
-aplicar (x:xs) = [resolucion x k | k <- xs, hayResolvente x k == True] ++ aplicar xs
+aplicar (x:xs) = [noRepetidos (resolucion x k) | k <- xs, hayResolvente x k == True] ++ aplicar xs
 
 -- Funcion que verifica si hay una clausula vacia dentro de un conjunto S
 hayVacia :: [Clausula] -> Bool
 hayVacia [] = False
 hayVacia (x:xs) = if x == [] then True else hayVacia xs
 
--- Funcion que recibe dos conjuntos Rn Rn+1 y devuelve
+-- Funcion que recibe dos conjuntos Rn Rn+1 y devuelve verdadero si se resuelve.
 res :: [Clausula]->[Clausula]-> Bool
 res cjt_anterior  cjt_actual =
   let res_actual = cjt_actual ++ aplicar cjt_actual in 
