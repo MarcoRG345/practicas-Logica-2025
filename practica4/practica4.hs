@@ -197,14 +197,14 @@ heuristicsLiteral clausulas =
     --FUnción aux. que cuenta cuantas veces está una variable en todas las claúsulas
     contarEnClausulas :: String -> [Clausula] -> Int
     contarEnClausulas _ [] = 0 --Caso base: si no hay cláusulas regresamos 0
-    contarEnClausulas v (c:cs) = --Caso recursivo: contamos cuántas veces aparece la variable v en la primera cláusula c
+    contarEnClausulas v (c:cs) = --contamos cuántas veces aparece la variable v en la primera cláusula c
         contarEnClausula v c + contarEnClausulas v cs
     --y le sumamos cuántas veces aparece en el resto de las cláusulas cs
     
     --Función aux. que cuenta cuantas veces está una variable en una claúsula
     contarEnClausula :: String -> Clausula -> Int
     contarEnClausula _ [] = 0 --Caso base: si la cláusula está vacía regresamos 0
-    contarEnClausula v (lit:ls) = --Caso recursivo: contamos cuántas veces aparece la variable v en la primera cláusula c
+    contarEnClausula v (lit:ls) = --contamos cuántas veces aparece la variable v en la primera cláusula c
         if getNombre lit == v
             then 1 + contarEnClausula v ls
             else contarEnClausula v ls
@@ -217,15 +217,15 @@ heuristicsLiteral clausulas =
     buscarMaximo ((v1, n1):resto) = --separamos la cabeza de la lista (v1, n1) y el resto de los pares
         let v2 = buscarMaximo resto --v2 es la variable que más aparece en el resto de la lista
             n2 = buscarConteo v2 resto --n2 es el número de veces que aparece esa variable v2 en el resto de la lista
-        in if n1 >= n2 --Comparamos cuántas veces aparece la variable actual v1 contra la mejor del resto v2
-            then v1 --Si v1 aparece más o igual que v2, entonces v1 es el nuevo máximo
-            else v2  --Si no, mantenemos v2 como el máximo
+        in if n1 >= n2 --comparamos cuántas veces aparece la variable actual v1 contra la mejor del resto v2
+            then v1 --si v1 aparece más o igual que v2, entonces v1 es el nuevo máximo
+            else v2  --si no, mantenemos v2 como el máximo
 
     --Función aux que busca el conteo de una var especifica
     buscarConteo :: String -> [(String, Int)] -> Int
-    buscarConteo _ [] = 0 --Si está vacía, no se encontró la variable, regresamos 0
-    buscarConteo v ((v2, n):resto) = --Se descompone la lista en la cabeza (v2, n) y la cola (resto)
-        if v == v2 --Si la variable actual es igual a la que estamos buscando:
+    buscarConteo _ [] = 0 --si está vacía, no se encontró la variable, regresamos 0
+    buscarConteo v ((v2, n):resto) = --se descompone la lista en la cabeza (v2, n) y la cola (resto)
+        if v == v2 --si la variable actual es igual a la que estamos buscando:
         then n --se retorna el conteo asociado
         else buscarConteo v resto --sino, se sigue buscando en el resto de la lista
 
@@ -246,7 +246,7 @@ interpretacionConsistente ((x,v):xs) = -- Si el elemento actual contradice algo 
         then if v == w -- :y el valor es igual ent seguimos buscando
                 then contradice x v ys 
                 else True -- :pero si el valor es diferente ent hay contradicción
-        else contradice x v ys --Si es otra variable ent seguimos buscando
+        else contradice x v ys --si es otra variable ent seguimos buscando
 
 -- Función prinicipal
 dpll :: [Clausula] -> Interpretacion
