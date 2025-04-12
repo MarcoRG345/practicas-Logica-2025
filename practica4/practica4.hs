@@ -258,6 +258,58 @@ dpll clausulas =
         then modelo --Si cumple, retorna la interpretación encontrada
         else [] --Si no hay solución válida retorna vacio
 
+--- Funciones auxiliares usadas en la practica pasada ---
+
+-- Funcion aux que dado una formula en PROP devuelve su FNN
+
+fnn :: Prop -> Prop
+fnn (Var p) = Var p
+fnn (Cons a) = Cons a
+fnn (Not (Var p)) = Not (Var p)
+fnn (Not (Not p)) = fnn p
+fnn (Not (And p q)) = Or (fnn (Not p)) (fnn (Not q))
+fnn (Not (Or p q)) = And (fnn (Not p)) (fnn (Not q))
+fnn (Not (Impl p q)) = And (fnn p) (fnn (Not q))
+fnn (Not (Syss p q)) = fnn (Syss (Not p) (q))
+fnn (And p q) = And (fnn p) (fnn q)
+fnn (Or p q) = Or (fnn p) (fnn q)
+fnn (Impl p q) = fnn (Or (Not p) q)
+fnn (Syss p q) = fnn (And (Impl p q) (Impl q p))
+
+-- Función para distribuir y pasarla a su forma normal conjuntiva
+distribuir :: Prop -> Prop -> Prop
+distribuir (And p q) r = And (distribuir p r) (distribuir q r)
+distribuir p (And q r) = And (distribuir p q) (distribuir p r) 
+distribuir p q = Or p q
+-- Funcion para convertir una formula a FNC
+fnc :: Prop -> Prop
+fnc prop = fncdos (fnn prop) --Primero convertimos a fnn y ya luego a fnc
+  where
+    fncdos :: Prop -> Prop
+    fncdos (And p q) = And (fncdos p) (fncdos q) --Conjunción recursiva
+    fncdos (Or p q) = distribuir (fncdos p) (fncdos q)  --Dsitribuimos or sobre and
+    fncdos p = p 
+
+noRepetidos :: Clausula -> Clausula
+noRepetidos [] = []
+noRepetidos (x:xs) = x : noRepetidos [k | k <- xs, k /= x]
+
+--Función para concatenar listas de claúsulas
+concatenar :: [[c]] ->[c]
+concatenar [] = []
+concatenar (xs:xss) = xs ++ concatenar xss --concatenación recursiva
+
+--Función para unir dos cláusulas sin repeticiones
+clausulaUnion :: [Clausula] -> [Clausula] -> Clausula
+clausulaUnion c1 c2 = noRepetidos (concatenar c1 ++ concatenar c2)
+
+clausulas :: Prop -> [Clausula]
+clausulas (And p q) = clausulas p ++ clausulas q  --si es conjunción divide las claúsulas
+clausulas (Or p q) = [clausulaUnion (clausulas p) (clausulas q)] --si es disyunción une las claúsulas
+clausulas p =[[p]]
+
+-------
+
 -- Ejercicio extra (Hasta 1 punto)
 dpll2 :: Prop -> Interpretacion
-dpll2 = undefined 
+dpll2 phi = dpll (clausulas (fnc phi))
